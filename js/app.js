@@ -311,161 +311,11 @@ function renderSkeletonList() {
   }
 }
 
-function renderPatientsList() {
-  const list = q('#patients-list'); if (!list) return;
-
-  if (State.loading && !State.patients.length) {
-    renderSkeletonList();
-    return;
-  }
-
-  const items = getFilteredPatients();
-  if (!items.length) {
-    list.innerHTML = ''; // Clear if truly empty
-    const d = document.createElement('div'); d.className = 'empty small';
-    d.style.padding = '16px'; d.textContent = 'No patients in this view.';
-    list.appendChild(d);
-    return;
-  }
-
-  // --- Smart Diffing Strategy ---
-  // 1. Map existing cards
-  const existingMap = new Map();
-  Array.from(list.children).forEach(el => {
-    if (el.dataset.code) existingMap.set(el.dataset.code, el);
+function updateBulkBarState() {
+  const has = State.sel.size > 0;
+  ['#plist-move', '#plist-delete'].forEach(id => {
+    const b = q(id); if (b) b.disabled = !has;
   });
-
-  // 2. Build or Update cards
-  const fragment = document.createDocumentFragment();
-  let animIdx = 0;
-
-  items.forEach(p => {
-    const code = p['Patient Code'];
-    let row = existingMap.get(code);
-    const hl = getHLInfo(code);
-    const labsRec = Labs.getForPatient(code, State.labs);
-    const labsAbn = p['Labs Abnormal'] || abnormalSummary(labsRec);
-    const symArr = (p['Symptoms'] || '').split(',').map(x => x.trim()).filter(Boolean);
-    const symFull = symArr.join(', ');
-    const isDone = !!p['Done'];
-
-    // Data for verification
-    const signature = JSON.stringify({
-      n: p['Patient Name'], a: p['Patient Age'], s: p['Section'],
-      d: p['Diet'], r: p['Room'], done: isDone,
-      hl: hl.on, hn: hl.note, sym: symFull, lab: labsAbn
-    });
-
-    if (row) {
-      // Reuse existing card
-      existingMap.delete(code); // Mark as used
-      // Check if update needed (simple signature check)
-      if (row.dataset.sig === signature) {
-        // No visual changes needed, just ensure order (append moves it)
-        fragment.appendChild(row);
-        return;
-      }
-      // Update contents
-      row.innerHTML = ''; // Clear to rebuild inner (simpler than granular DOM patching for now)
-      // Reset animation to draw attention? No, keep it stable.
-      row.classList.remove('pr-slide-in');
-    } else {
-      // Create new
-      row = document.createElement('div');
-      row.className = 'row patient-card pr-slide-in';
-      row.dataset.code = code;
-      row.style.setProperty('--pr-idx', String(animIdx++));
-    }
-
-    // Apply common attrs
-    row.dataset.sig = signature;
-    row.className = 'row patient-card ' + (hl.on ? ' pr-highlighted' : '') + (row.classList.contains('pr-slide-in') ? ' pr-slide-in' : '');
-
-    // --- Build Inner Content (Same logic as before) ---
-    const left = document.createElement('div');
-
-    const header = document.createElement('div'); header.className = 'row-header';
-    const headLeft = document.createElement('div'); headLeft.style.display = 'flex'; headLeft.style.alignItems = 'center'; headLeft.style.gap = '8px';
-
-    const starBtn = document.createElement('button');
-    starBtn.className = 'pr-hl-btn';
-    starBtn.type = 'button';
-    starBtn.title = hl.on ? `Highlighted: ${hl.note}` : 'Highlight this patient';
-    starBtn.setAttribute('aria-pressed', hl.on ? 'true' : 'false');
-    starBtn.innerHTML = hl.on ? '⭐' : '☆';
-    starBtn.onclick = (e) => { e.stopPropagation(); toggleHighlight(code, !hl.on, !hl.on); };
-    headLeft.appendChild(starBtn);
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox'; cb.className = 'plist-cb';
-    cb.checked = State.sel.has(code);
-    cb.addEventListener('change', () => {
-      if (cb.checked) State.sel.add(code); else State.sel.delete(code);
-      updateBulkBarState();
-    });
-    headLeft.appendChild(cb);
-
-    const name = document.createElement('div'); name.className = 'row-title linkish'; name.textContent = p['Patient Name'] || '(Unnamed)';
-    headLeft.appendChild(name);
-
-    const badge = document.createElement('span'); badge.className = 'status ' + (isDone ? 'done' : 'open'); badge.textContent = isDone ? 'Done' : 'Open';
-    header.appendChild(headLeft); header.appendChild(badge);
-
-    // Meta: Room Badge
-    let roomHtml = p['Room'] || '—';
-    if (p['Room'] && p['Room'].trim()) {
-      roomHtml = `Room <span class="pr-room-badge"><span class="dot"></span>${p['Room']}</span>`;
-    }
-    const meta = document.createElement('div'); meta.className = 'row-sub';
-    const dx = p['Diagnosis'] ? `• ${p['Diagnosis']}` : '';
-    meta.innerHTML = `${p['Patient Age'] || '—'} yrs • ${roomHtml} ${dx}`;
-
-    const tags = document.createElement('div'); tags.className = 'row-tags';
-    const sectionPill = document.createElement('span'); sectionPill.className = 'row-tag'; sectionPill.textContent = p['Section'] || 'Default'; tags.appendChild(sectionPill);
-
-    if (hl.on && hl.note) {
-      const hlChip = document.createElement('span'); hlChip.className = 'row-chip pr-hl-note';
-      hlChip.textContent = `⭐ ${hl.note}`; tags.appendChild(hlChip);
-    }
-    if (labsAbn) { const chip = document.createElement('span'); chip.className = 'row-chip abn'; chip.textContent = labsAbn; tags.appendChild(chip); }
-    if ((p['Diet'] || '').trim()) {
-      const dChip = document.createElement('span'); dChip.className = 'row-chip pr-diet';
-      dChip.title = "Today's notes"; dChip.textContent = p['Diet']; tags.appendChild(dChip);
-    }
-    if (symFull) { const chip = document.createElement('span'); chip.className = 'row-chip sym pr-sym'; chip.textContent = symFull; tags.appendChild(chip); }
-
-    left.appendChild(header); left.appendChild(meta); left.appendChild(tags);
-
-    // Mini Chips
-    const mini = document.createElement('div'); mini.className = 'mini-actions';
-    function makeChip(label, type) {
-      const b = document.createElement('button'); b.className = 'btn-chip';
-      b.dataset.calc = type; b.dataset.code = code; b.textContent = label;
-      return b;
-    }
-    mini.appendChild(makeChip('ECOG', 'ecog'));
-    mini.appendChild(makeChip('PPI', 'ppi'));
-    mini.appendChild(makeChip('PPS', 'pps'));
-    left.appendChild(mini);
-
-    const right = document.createElement('div'); right.innerHTML = '<span class="mono muted">' + (code || '') + '</span>';
-    row.appendChild(left); row.appendChild(right);
-
-    name.addEventListener('click', (e) => {
-      e.stopPropagation();
-      Patients.setActiveByCode?.(code);
-      openDashboardFor(code, true);
-    });
-
-    fragment.appendChild(row);
-  });
-
-  // 3. Cleanup: Remove items left in existingMap (they are no longer in view)
-  existingMap.forEach(el => el.remove());
-
-  // 4. Attach new state in one go
-  list.appendChild(fragment);
-  updateBulkBarState();
 }
 
 // ===== AVATAR HELPER =====
@@ -547,24 +397,7 @@ function renderKanbanBoard() {
   list.appendChild(board);
 }
 
-// Overwrite main render to pivot based on mode
-const _origRender = renderPatientsList;
 State.viewMode = 'list'; // default
-
-// Monkey-patch or wrapper
-window.renderPatientsList = function () {
-  if (State.viewMode === 'kanban') {
-    renderKanbanBoard();
-  } else {
-    // Inject Avatars into list view items (modified Logic)
-    // We need to re-run the original render logic but with Avatar injection
-    // Since I can't easily patch the loop inside _origRender without rewriting it all again...
-    // I will rewrite the *Avatar Injection* part into the main render block below.
-    _origRender();
-    // After render, inject avatars? No, better to inline it.
-    // Actually, let's just use a dedicated Render function that handles both.
-  }
-};
 
 // Redefine renderPatientsList to include Avatar + Kanban switch
 // (Overwriting the previous function completely to keep it clean)
@@ -1643,9 +1476,9 @@ export const App = {
 
 
 // ===== VIEW TOGGLE EVENT =====
-(function setupViewToggle(){
+(function setupViewToggle() {
   const btn = document.getElementById('btn-view-toggle');
-  if(btn) {
+  if (btn) {
     btn.addEventListener('click', () => {
       if (State.viewMode === 'list') {
         State.viewMode = 'kanban';
