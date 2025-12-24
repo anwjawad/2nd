@@ -172,8 +172,16 @@ function createScoreItem({ title, max, value = null, noteValue = '' }) {
 
   noteWrap.appendChild(noteField);
 
+  // Visual Bar Container
+  const barBg = document.createElement('div');
+  barBg.className = 'score-bar-bg';
+  const barFill = document.createElement('div');
+  barFill.className = 'score-bar-fill';
+  barBg.appendChild(barFill);
+
   root.appendChild(head);
   root.appendChild(noteWrap);
+  root.appendChild(barBg); // Append bar at bottom
 
   // حالة داخلية
   let currentScore = value;
@@ -183,6 +191,21 @@ function createScoreItem({ title, max, value = null, noteValue = '' }) {
     buttons.forEach((b, idx) => {
       b.classList.toggle('active', s === idx);
     });
+
+    // Update Visual Bar
+    if (s === null) {
+      barFill.style.width = '0%';
+      barFill.className = 'score-bar-fill';
+    } else {
+      const pct = (s / max) * 100;
+      barFill.style.width = `${pct}%`;
+      // Color logic
+      barFill.className = 'score-bar-fill'; // reset
+      if (s <= 3) barFill.classList.add('low');
+      else if (s <= 7) barFill.classList.add('med');
+      else barFill.classList.add('high');
+    }
+
     if (s === null || s === undefined) {
       root.classList.remove('has-score');
       // أخفِ الملاحظة إذا لا توجد درجة
