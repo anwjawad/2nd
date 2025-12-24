@@ -530,7 +530,7 @@ body::before {
 
   /* Slide from right animation */
   transform: translateX(100%);
-  transition: transform 0.4s var(--ease-elastic);
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
 }
 
 .modal:not(.hidden) .modal-card {
@@ -585,10 +585,12 @@ body::before {
 #esas-grid,
 #symptoms-grid {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  /* Slightly wider for notes */
+  gap: 12px;
   margin-top: 12px;
-  align-items: stretch;
+  align-items: start;
+  /* align top to prevent stretching height weirdly */
 }
 
 /* Card Style for Grid Items */
@@ -597,11 +599,51 @@ body::before {
   background: var(--glass-highlight);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
-  padding: 8px 10px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   transition: 0.2s;
+  min-width: 0;
+  /* Important for grid overflow */
+}
+
+.score-item:hover,
+.lab:hover {
+  background: var(--glass-border);
+  border-color: var(--glass-border-high);
+}
+
+/* Fix Textarea Overflow in Grid */
+.score-note,
+.score-note textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 100%;
+  box-sizing: border-box;
+}
+
+.score-note textarea {
+  resize: vertical;
+  /* allow vertical only */
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Compact Headings inside cards */
+.score-title,
+.lab-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+flex-direction: column;
+gap: 6px;
+transition: 0.2s;
 }
 
 .score-item:hover,
