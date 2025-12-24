@@ -1334,3 +1334,14 @@ export const App = {
   bus: Bus,
   state: State
 };
+
+// ===== Future UI 2026: Spotlight & Cursor Tracking =====
+(function setupSpotlight(){
+  const root = document.documentElement;
+  document.addEventListener('mousemove', e => {
+    // Update CSS variables for the spotlight effect
+    root.style.setProperty('--cursor-x', e.clientX + 'px');
+    root.style.setProperty('--cursor-y', e.clientY + 'px');
+  });
+})();
+
