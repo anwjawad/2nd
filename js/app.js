@@ -311,12 +311,7 @@ function renderSkeletonList() {
   }
 }
 
-function updateBulkBarState() {
-  const has = State.sel.size > 0;
-  ['#plist-move', '#plist-delete'].forEach(id => {
-    const b = q(id); if (b) b.disabled = !has;
-  });
-}
+
 
 // ===== AVATAR HELPER =====
 function getAvatar(name) {
