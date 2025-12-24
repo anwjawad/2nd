@@ -491,15 +491,17 @@ body::before {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
-/* ================= MODALS & GLASS PANELS ================= */
+/* ================= SIDE PANEL (was Modal) ================= */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.4);
+  /* Dimmer backdrop */
+  backdrop-filter: blur(4px);
   z-index: 1000;
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: flex-end;
+  /* Align right */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -511,55 +513,169 @@ body::before {
 }
 
 .modal-card {
-  width: min(90vw, 800px);
-  max-height: 90vh;
-  background: color-mix(in srgb, var(--bg-surface) 80%, transparent);
-  border: 1px solid var(--glass-border-high);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8);
+  width: min(85vw, 600px);
+  /* Side panel width */
+  height: 100vh;
+  max-height: 100vh;
+  background: color-mix(in srgb, var(--bg-surface) 90%, var(--bg-void));
+  border-left: 1px solid var(--glass-border-high);
+  border-right: none;
+  border-top: none;
+  border-bottom: none;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  /* Rounded left corners only */
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  transform: scale(0.95) translateY(20px);
+
+  /* Slide from right animation */
+  transform: translateX(100%);
   transition: transform 0.4s var(--ease-elastic);
 }
 
 .modal:not(.hidden) .modal-card {
-  transform: scale(1) translateY(0);
+  transform: translateX(0);
 }
 
+/* Remove old scale/translate effects */
 .modal-header {
-  padding: 24px;
+  padding: 20px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.2);
+  /* Header distinct */
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 
 .modal-body {
   padding: 24px;
   overflow-y: auto;
+  flex: 1;
+  /* Scrollbar offset */
+  padding-right: 16px;
 }
 
 .modal-footer {
-  padding: 20px 24px;
+  padding: 16px 24px;
   border-top: 1px solid var(--glass-border);
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 12px;
+  background: rgba(0, 0, 0, 0.2);
 }
 
-/* Modal Fullscreen Variant */
+/* Modal Fullscreen Variant (if needed) */
 .modal-card-full {
-  width: 96vw;
-  height: 94vh;
+  width: 100vw;
+  border-radius: 0;
 }
+
+
+/* ================= COMPACT GRIDS (Labs & ESAS) ================= */
+/* Grid Container */
+#labs-grid,
+#esas-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  align-items: stretch;
+}
+
+/* Card Style for Grid Items */
+.score-item,
+.lab {
+  background: var(--glass-highlight);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: 0.2s;
+}
+
+.score-item:hover,
+.lab:hover {
+  background: var(--glass-border);
+  border-color: var(--glass-border-high);
+}
+
+/* Compact Headings inside cards */
+.score-title,
+.lab-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lab-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+/* Compact Inputs */
+.score-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.score-btn {
+  width: 18px;
+  height: 18px;
+  font-size: 9px;
+  padding: 0;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.lab input {
+  font-size: 13px;
+  padding: 6px 8px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid transparent;
+}
+
+.lab input:focus {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: var(--primary);
+}
+
+/* Abnormal Highlights */
+.lab.abnormal-high input {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.lab.abnormal-low input {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.chip.high {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  color: var(--danger);
+}
+
+.chip.low {
+  background: color-mix(in srgb, var(--warn) 20%, transparent);
+  color: var(--warn);
+}
+
 
 /* ================= FORMS & INPUTS ================= */
 .grid {
